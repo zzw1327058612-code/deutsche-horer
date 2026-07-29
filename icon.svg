@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- 德国国旗色调装饰 -->
+  <rect x="0" y="0" width="512" height="8" fill="#1a1a2e" opacity="0"/>
+  <!-- 音波/耳机图标 -->
+  <g transform="translate(256,256)">
+    <!-- 耳机弧线 -->
+    <path d="M -120 -40 Q -120 -130, 0 -130 Q 120 -130, 120 -40" stroke="#4a9eff" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <!-- 左耳罩 -->
+    <rect x="-130" y="-40" width="40" height="70" rx="12" fill="#4a9eff"/>
+    <!-- 右耳罩 -->
+    <rect x="90" y="-40" width="40" height="70" rx="12" fill="#4a9eff"/>
+    <!-- 声波 -->
+    <g stroke="#4a9eff" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.6">
+      <line x1="-60" y1="60" x2="-60" y2="100"/>
+      <line x1="-20" y1="40" x2="-20" y2="120"/>
+      <line x1="20" y1="50" x2="20" y2="110"/>
+      <line x1="60" y1="30" x2="60" y2="130"/>
+    </g>
+    <!-- D字母 -->
+    <text x="0" y="10" font-family="Arial,sans-serif" font-size="48" font-weight="bold" fill="#fff" text-anchor="middle" dominant-baseline="middle" opacity="0.15">DE</text>
+  </g>
+  <!-- 标题 -->
+  <text x="256" y="440" font-family="Arial,sans-serif" font-size="42" font-weight="bold" fill="#4a9eff" text-anchor="middle">Hörer</text>
+</svg>

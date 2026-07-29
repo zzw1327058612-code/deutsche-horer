@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="德语听力">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Deutsch Hörer - 德语听力播放器</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航 -->
+        <nav id="bottom-nav">
+            <button class="nav-btn active" data-page="search">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <span>搜索</span>
+            </button>
+            <button class="nav-btn" data-page="library">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/></svg>
+                <span>收藏</span>
+            </button>
+            <button class="nav-btn" data-page="playlists">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zm13 0v6l5-3z"/></svg>
+                <span>播放夹</span>
+            </button>
+            <button class="nav-btn" data-page="review">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                <span>复习</span>
+            </button>
+            <button class="nav-btn" data-page="player">
+                <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                <span>播放</span>
+            </button>
+        </nav>
+
+        <!-- 搜索页 -->
+        <div id="page-search" class="page active">
+            <header class="page-header">
+                <h1>Deutsch Hörer</h1>
+                <p class="subtitle">德语听力播放器</p>
+            </header>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="搜索单词、短语、句子..." autocomplete="off">
+                <button id="search-btn">搜索</button>
+            </div>
+            <div class="search-filters">
+                <button class="filter-btn active" data-filter="all">全部</button>
+                <button class="filter-btn" data-filter="word">单词</button>
+                <button class="filter-btn" data-filter="phrase">短语</button>
+                <button class="filter-btn" data-filter="sentence">短句</button>
+                <button class="filter-btn" data-filter="quote">语录</button>
+            </div>
+            <div id="search-results" class="content-area"></div>
+            <div class="manual-input-section">
+                <h3>手动录入</h3>
+                <textarea id="manual-deutsch" placeholder="输入德语内容..." rows="2"></textarea>
+                <textarea id="manual-chinese" placeholder="中文翻译..." rows="1"></textarea>
+                <textarea id="manual-english" placeholder="英文翻译（可选）..." rows="1"></textarea>
+                <button id="manual-save-btn">保存到收藏</button>
+            </div>
+        </div>
+
+        <!-- 收藏库页 -->
+        <div id="page-library" class="page">
+            <header class="page-header">
+                <h1>我的收藏</h1>
+            </header>
+            <div class="library-controls">
+                <select id="library-sort">
+                    <option value="time-desc">最新添加</option>
+                    <option value="time-asc">最早添加</option>
+                    <option value="importance">按重要度</option>
+                    <option value="alpha">按字母</option>
+                </select>
+                <input type="text" id="library-filter" placeholder="筛选...">
+            </div>
+            <div id="library-list" class="content-area"></div>
+        </div>
+
+        <!-- 播放夹页 -->
+        <div id="page-playlists" class="page">
+            <header class="page-header">
+                <h1>播放夹</h1>
+                <button class="header-action" id="new-playlist-btn">+ 新建</button>
+            </header>
+            <div id="playlists-list" class="content-area"></div>
+        </div>
+
+        <!-- 复习页 -->
+        <div id="page-review" class="page">
+            <header class="page-header">
+                <h1>艾宾浩斯复习</h1>
+            </header>
+            <div id="review-stats" class="review-stats"></div>
+            <div id="review-list" class="content-area"></div>
+        </div>
+
+        <!-- 播放器页 -->
+        <div id="page-player" class="page">
+            <div id="player-view"></div>
+        </div>
+
+        <!-- 播放器迷你条 -->
+        <div id="mini-player" class="hidden">
+            <div id="mini-player-info"></div>
+            <button id="mini-player-play"></button>
+            <button id="mini-player-next">⏭</button>
+        </div>
+    </div>
+
+    <!-- 模态弹窗 -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div id="modal-content" class="modal-content"></div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- 详情弹窗 -->
+    <div id="detail-overlay" class="modal-overlay hidden">
+        <div id="detail-content" class="modal-content detail-modal"></div>
+    </div>
+
+    <script src="data/dictionary.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/tts.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/recorder.js"></script>
+    <script src="js/ebbinghaus.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(() => {
+                    console.log('SW registered');
+                }).catch((err) => {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
