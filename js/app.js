@@ -694,12 +694,43 @@ const App = (function() {
                 <div class="player-header">
                     <h2>播放器</h2>
                 </div>
-                <div class="empty-state" style="padding:80px 20px;">
+                <div class="empty-state" style="padding:40px 20px;">
                     <svg viewBox="0 0 24 24" fill="currentColor" style="width:60px;height:60px;opacity:0.3;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                     <p>当前没有播放内容</p>
                     <p style="margin-top:8px;font-size:13px">从播放夹开始播放</p>
                 </div>
+                <div class="player-settings" style="margin-top:20px;">
+                    <div class="queue-title" style="margin-bottom:10px;">🔊 发音引擎设置</div>
+                    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+                        词库内容已有高质量预生成音频。<br>
+                        手动录入内容如需更好音质，请部署 TTS 代理（见下方说明）。
+                    </div>
+                    <input type="text" id="tts-proxy-url" placeholder="TTS 代理 URL（可选）" 
+                        value="${TTS.getTtsProxyUrl() || ''}" 
+                        style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface);color:var(--text);outline:none;margin-bottom:8px;">
+                    <button id="tts-proxy-save" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px;width:100%;font-size:14px;font-weight:600;cursor:pointer;">保存代理设置</button>
+                    <details style="margin-top:10px;font-size:13px;color:var(--text-secondary);">
+                        <summary style="cursor:pointer;font-weight:600;">如何部署 TTS 代理？</summary>
+                        <div style="margin-top:8px;line-height:1.6;">
+                            <p><b>方法：部署 Cloudflare Worker（免费）</b></p>
+                            <p>1. 注册 <a href="https://dash.cloudflare.com" target="_blank">Cloudflare</a> 账号</p>
+                            <p>2. 进入 Workers & Pages → Create Worker</p>
+                            <p>3. 粘贴项目中的 <code>cloudflare-worker-tts.js</code> 代码</p>
+                            <p>4. 保存并部署</p>
+                            <p>5. 复制 Worker URL 填入上方输入框</p>
+                            <p style="margin-top:6px;color:var(--text-tertiary);">不配置也能用，手动录入内容会用系统语音朗读。</p>
+                        </div>
+                    </details>
+                </div>
             `;
+            const proxySaveBtn = document.getElementById('tts-proxy-save');
+            if (proxySaveBtn) {
+                proxySaveBtn.addEventListener('click', () => {
+                    const url = document.getElementById('tts-proxy-url').value.trim();
+                    TTS.setTtsProxyUrl(url);
+                    showToast(url ? '代理设置已保存' : '代理已清除');
+                });
+            }
             return;
         }
 
@@ -780,6 +811,30 @@ const App = (function() {
                 </div>
             </div>
 
+            <div class="player-settings" style="margin-top:16px;">
+                <div class="queue-title" style="margin-bottom:10px;">🔊 发音引擎设置</div>
+                <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+                    词库内容已有高质量预生成音频。<br>
+                    手动录入内容如需更好音质，请部署 TTS 代理（见下方说明）。
+                </div>
+                <input type="text" id="tts-proxy-url" placeholder="TTS 代理 URL（可选）" 
+                    value="${TTS.getTtsProxyUrl() || ''}" 
+                    style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface);color:var(--text);outline:none;margin-bottom:8px;">
+                <button id="tts-proxy-save" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px;width:100%;font-size:14px;font-weight:600;cursor:pointer;">保存代理设置</button>
+                <details style="margin-top:10px;font-size:13px;color:var(--text-secondary);">
+                    <summary style="cursor:pointer;font-weight:600;">如何部署 TTS 代理？</summary>
+                    <div style="margin-top:8px;line-height:1.6;">
+                        <p><b>方法：部署 Cloudflare Worker（免费）</b></p>
+                        <p>1. 注册 <a href="https://dash.cloudflare.com" target="_blank">Cloudflare</a> 账号</p>
+                        <p>2. 进入 Workers & Pages → Create Worker</p>
+                        <p>3. 粘贴项目中的 <code>cloudflare-worker-tts.js</code> 代码</p>
+                        <p>4. 保存并部署</p>
+                        <p>5. 复制 Worker URL 填入上方输入框</p>
+                        <p style="margin-top:6px;color:var(--text-tertiary);">不配置也能用，手动录入内容会用系统语音朗读。</p>
+                    </div>
+                </details>
+            </div>
+
             ${state.queue.length > 1 ? `
             <div class="player-queue" style="margin-top:16px;">
                 <div class="queue-title">播放队列</div>
@@ -837,6 +892,16 @@ const App = (function() {
             Storage.saveSettings(s);
             AudioPlayer.setSettings(s);
         });
+
+        // TTS 代理设置
+        const proxySaveBtn = document.getElementById('tts-proxy-save');
+        if (proxySaveBtn) {
+            proxySaveBtn.addEventListener('click', () => {
+                const url = document.getElementById('tts-proxy-url').value.trim();
+                TTS.setTtsProxyUrl(url);
+                showToast(url ? '代理设置已保存' : '代理已清除');
+            });
+        }
 
         // 队列跳转
         container.querySelectorAll('.q-play').forEach(btn => {
