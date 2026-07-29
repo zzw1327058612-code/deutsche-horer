@@ -3,7 +3,7 @@
  * 离线缓存 + 后台播放支持
  */
 
-const CACHE_NAME = 'deutsch-horer-v3';
+const CACHE_NAME = 'deutsch-horer-v4';
 const ASSETS = [
     './',
     './index.html',

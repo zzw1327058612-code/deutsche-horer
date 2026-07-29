@@ -1,8 +1,9 @@
 /**
  * TTS 语音合成模块
- * 双引擎策略：
- * 1. 优先使用预生成的高质量 MP3 音频（Google TTS 生成）
- * 2. 回退到 Web Speech API 的 SpeechSynthesis（系统 TTS）
+ * 三引擎策略（按优先级）：
+ * 1. 预生成的高质量 MP3 音频（Google TTS 预先生成）
+ * 2. 在线 Google Translate TTS（实时生成，用于手动录入内容）
+ * 3. Web Speech API 的 SpeechSynthesis（离线系统 TTS，最终回退）
  */
 const TTS = (function() {
 
@@ -19,7 +20,6 @@ const TTS = (function() {
             loadVoices();
             speechSynthesis.onvoiceschanged = loadVoices;
         }
-        // 加载音频映射
         loadAudioMap();
         return true;
     }
@@ -52,9 +52,6 @@ const TTS = (function() {
         return voices.filter(v => v.lang.startsWith('de'));
     }
 
-    /**
-     * 检查是否有预生成音频
-     */
     function hasPreGeneratedAudio(text) {
         return !!audioMap[text];
     }
@@ -66,7 +63,6 @@ const TTS = (function() {
         const filename = audioMap[text];
         if (!filename) return false;
 
-        // 停止当前播放
         stopAll();
 
         const audio = new Audio(audioBasePath + filename);
@@ -79,14 +75,54 @@ const TTS = (function() {
             onend();
         };
         audio.onerror = (e) => {
-            console.warn('Audio playback error:', e);
+            console.warn('Pre-generated audio error, trying online TTS:', e);
             currentAudio = null;
-            // 回退到 TTS
+            speakWithGoogleTTS(text, rate, onend, onstart);
+        };
+
+        audio.play().catch(e => {
+            console.warn('Pre-generated play failed, trying online TTS:', e);
+            currentAudio = null;
+            speakWithGoogleTTS(text, rate, onend, onstart);
+        });
+
+        return true;
+    }
+
+    /**
+     * 使用 Google Translate TTS 在线生成音频
+     * 通过 <audio> 标签播放，不受 CORS 限制
+     */
+    function speakWithGoogleTTS(text, rate, onend, onstart) {
+        // Google TTS 限制 200 字符以内
+        if (text.length > 200) {
+            console.warn('Text too long for Google TTS, using system TTS');
+            return speakWithTTS(text, rate, onend, onstart);
+        }
+
+        stopAll();
+
+        const url = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' +
+            encodeURIComponent(text) + '&tl=de&client=tw-ob&total=1&idx=0&textlen=' + text.length;
+
+        const audio = new Audio(url);
+        audio.playbackRate = rate || 1.0;
+        audio.crossOrigin = 'anonymous';
+        currentAudio = audio;
+
+        if (onstart) audio.onplay = onstart;
+        if (onend) audio.onended = () => {
+            currentAudio = null;
+            onend();
+        };
+        audio.onerror = (e) => {
+            console.warn('Google TTS failed, falling back to system TTS:', e);
+            currentAudio = null;
             speakWithTTS(text, rate, onend, onstart);
         };
 
         audio.play().catch(e => {
-            console.warn('Audio play failed:', e);
+            console.warn('Google TTS play failed, falling back to system TTS:', e);
             currentAudio = null;
             speakWithTTS(text, rate, onend, onstart);
         });
@@ -95,7 +131,7 @@ const TTS = (function() {
     }
 
     /**
-     * 使用 Web Speech API 朗读
+     * 使用 Web Speech API 朗读（系统 TTS，最终回退）
      */
     function speakWithTTS(text, rate = 1.0, onend = null, onstart = null) {
         if (!('speechSynthesis' in window)) {
@@ -125,49 +161,37 @@ const TTS = (function() {
 
     /**
      * 朗读德语文本（主入口）
-     * 优先使用预生成音频，回退到 TTS
+     * 优先级：预生成 MP3 > Google 在线 TTS > 系统 TTS
      */
     function speak(text, rate = 1.0, onend = null, onstart = null) {
-        // 优先使用预生成音频
+        // 1. 优先使用预生成音频
         if (hasPreGeneratedAudio(text)) {
             return playPreGenerated(text, rate, onend, onstart);
         }
-        // 回退到 TTS
-        return speakWithTTS(text, rate, onend, onstart);
+        // 2. 手动录入内容用 Google 在线 TTS
+        return speakWithGoogleTTS(text, rate, onend, onstart);
     }
 
     function stopAll() {
-        // 停止 Audio
         if (currentAudio) {
             currentAudio.pause();
             currentAudio = null;
         }
-        // 停止 TTS
         if ('speechSynthesis' in window) {
             speechSynthesis.cancel();
         }
     }
 
-    function stop() {
-        stopAll();
-    }
+    function stop() { stopAll(); }
 
     function pause() {
-        if (currentAudio) {
-            currentAudio.pause();
-        }
-        if ('speechSynthesis' in window) {
-            speechSynthesis.pause();
-        }
+        if (currentAudio) currentAudio.pause();
+        if ('speechSynthesis' in window) speechSynthesis.pause();
     }
 
     function resume() {
-        if (currentAudio) {
-            currentAudio.play().catch(() => {});
-        }
-        if ('speechSynthesis' in window) {
-            speechSynthesis.resume();
-        }
+        if (currentAudio) currentAudio.play().catch(() => {});
+        if ('speechSynthesis' in window) speechSynthesis.resume();
     }
 
     function isSpeaking() {
