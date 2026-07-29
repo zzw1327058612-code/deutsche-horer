@@ -3,7 +3,7 @@
  * 离线缓存 + 后台播放支持
  */
 
-const CACHE_NAME = 'deutsch-horer-v2';
+const CACHE_NAME = 'deutsch-horer-v3';
 const ASSETS = [
     './',
     './index.html',
@@ -41,6 +41,27 @@ self.addEventListener('activate', (event) => {
 
 // 拦截请求
 self.addEventListener('fetch', (event) => {
+    const url = new URL(event.request.url);
+
+    // 音频文件：cache-first，永久缓存
+    if (url.pathname.startsWith('/deutsche-horer/audio/') && url.pathname.endsWith('.mp3')) {
+        event.respondWith(
+            caches.match(event.request).then((cached) => {
+                if (cached) return cached;
+                return fetch(event.request).then((response) => {
+                    if (response && response.status === 200) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, clone);
+                        });
+                    }
+                    return response;
+                });
+            })
+        );
+        return;
+    }
+
     // 只处理 GET 请求
     if (event.request.method !== 'GET') return;
 
