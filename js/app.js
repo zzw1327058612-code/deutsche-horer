@@ -59,6 +59,7 @@ const App = (function() {
 
     /**
      * 自动收藏词库中标记为"用户提交批次"的新词条
+     * 并直接加入默认播放夹
      * 已收藏的不会重复添加
      */
     function autoSaveBatchItems() {
@@ -92,16 +93,59 @@ const App = (function() {
         );
 
         let newCount = 0;
+        const defaultPlaylist = ensureDefaultPlaylist();
+
         batchItems.forEach(item => {
             if (!Storage.isSaved(item.de)) {
-                Storage.saveItem(item);
-                newCount++;
+                // 新内容：保存并加入播放夹
+                const result = Storage.saveItem(item);
+                if (result.success && defaultPlaylist) {
+                    Storage.addToPlaylist(defaultPlaylist.id, result.item.id);
+                    newCount++;
+                }
+            } else {
+                // 已收藏但可能不在播放夹里，补加入
+                const saved = Storage.getItemByDe(item.de);
+                if (saved && defaultPlaylist) {
+                    const pl = Storage.getPlaylists().find(p => p.id === defaultPlaylist.id);
+                    if (pl && !pl.items.includes(saved.id)) {
+                        Storage.addToPlaylist(defaultPlaylist.id, saved.id);
+                        newCount++;
+                    }
+                }
             }
         });
 
         if (newCount > 0) {
-            console.log(`Auto-saved ${newCount} batch items`);
+            console.log(`Auto-saved ${newCount} batch items to playlist`);
         }
+    }
+
+    /**
+     * 确保有一个默认播放夹，没有就创建
+     */
+    function ensureDefaultPlaylist() {
+        let playlists = Storage.getPlaylists();
+        // 查找名为"我的播放夹"的默认播放夹
+        let pl = playlists.find(p => p.name === '我的播放夹');
+        if (!pl) {
+            pl = Storage.createPlaylist('我的播放夹');
+        }
+        return pl;
+    }
+
+    /**
+     * 保存内容并自动加入默认播放夹
+     */
+    function saveToDefaultPlaylist(item) {
+        const result = Storage.saveItem(item);
+        if (result.success) {
+            const pl = ensureDefaultPlaylist();
+            if (pl) {
+                Storage.addToPlaylist(pl.id, result.item.id);
+            }
+        }
+        return result;
     }
 
     function navigateTo(page) {
@@ -161,14 +205,14 @@ const App = (function() {
                 return;
             }
 
-            const result = Storage.saveItem({
+            const result = saveToDefaultPlaylist({
                 de, zh, en,
                 type: de.length > 30 ? 'sentence' : (de.split(/\s+/).length > 3 ? 'phrase' : 'word'),
                 level: 'A1',
             });
 
             if (result.success) {
-                showToast('已保存到收藏');
+                showToast('已保存到播放夹');
                 document.getElementById('manual-deutsch').value = '';
                 document.getElementById('manual-chinese').value = '';
                 document.getElementById('manual-english').value = '';
@@ -264,11 +308,11 @@ const App = (function() {
                 saveBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!item) return;
-                    const result = Storage.saveItem(item);
+                    const result = saveToDefaultPlaylist(item);
                     if (result.success) {
-                        showToast('已收藏');
+                        showToast('已加入播放夹');
                         saveBtn.className = 'saved-btn';
-                        saveBtn.textContent = '✓ 已收藏';
+                        saveBtn.textContent = '✓ 已加入';
                         saveBtn.dataset.action = 'saved';
                         updateBadges();
                     } else {
