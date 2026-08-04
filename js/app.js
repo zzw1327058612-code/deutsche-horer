@@ -37,6 +37,9 @@ const App = (function() {
         // 加载首页
         renderSearchResults('');
 
+        // 自动收藏新词条（标记为"用户提交批次"）
+        autoSaveBatchItems();
+
         // 检查复习提醒
         checkReviewReminder();
 
@@ -52,6 +55,53 @@ const App = (function() {
                 navigateTo(page);
             });
         });
+    }
+
+    /**
+     * 自动收藏词库中标记为"用户提交批次"的新词条
+     * 已收藏的不会重复添加
+     */
+    function autoSaveBatchItems() {
+        // 找词库中"用户提交的实用短句"区块的条目
+        const batchItems = DICTIONARY.filter(item =>
+            item.de === 'Ich muss gleich wieder los.' ||
+            item.de === 'Ich weiß gar nicht, was ich damit machen soll.' ||
+            item.de === 'Kannst du das vorstellen?' ||
+            item.de === 'Was denken die sich nur?' ||
+            item.de === 'Mach ich.' ||
+            item.de === 'Aber nur unter einer Bedingung.' ||
+            item.de === 'Pass auf.' ||
+            item.de === 'Das geht!' ||
+            item.de === 'Spitze!' ||
+            item.de === "Geht's dir gut?" ||
+            item.de === 'Oh, Quatsch!' ||
+            item.de === "Das war's." ||
+            item.de === 'Ihr seid großartig!' ||
+            item.de === 'Bin schon ganz aufgeregt!' ||
+            item.de === 'Was kann ich für Sie tun?' ||
+            item.de === 'Wie du willst!' ||
+            item.de === 'Ich bin ziemlich müde.' ||
+            item.de === 'Hör zu!' ||
+            item.de === 'Zum Wohl!' ||
+            item.de === 'Herzlichen Glückwunsch!' ||
+            item.de === 'Anders als Andere,' ||
+            item.de === 'Alles in Ordnung?' ||
+            item.de === 'Sehen Sie mal da?' ||
+            item.de === 'Schön, dass Sie wieder da sind!' ||
+            item.de === 'Bin ich nicht!'
+        );
+
+        let newCount = 0;
+        batchItems.forEach(item => {
+            if (!Storage.isSaved(item.de)) {
+                Storage.saveItem(item);
+                newCount++;
+            }
+        });
+
+        if (newCount > 0) {
+            console.log(`Auto-saved ${newCount} batch items`);
+        }
     }
 
     function navigateTo(page) {
