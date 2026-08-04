@@ -360,6 +360,33 @@ const DICTIONARY = [
     {de:"Das Auto, das gestern gekauft wurde, ist schon kaputt.", zh:"昨天买的车已经坏了。（关系从句/被动）", en:"The car that was bought yesterday is already broken.", type:"sentence", level:"B2"},
     {de:"Obwohl es regnete, gingen wir spazieren.", zh:"虽然下雨，我们还是去散步了。", en:"Although it was raining, we went for a walk.", type:"sentence", level:"B1"},
     {de:"Je mehr ich lerne, desto besser verstehe ich.", zh:"我学得越多，理解得越好。", en:"The more I learn, the better I understand.", type:"sentence", level:"B2"},
+
+    // ===== 用户提交的实用短句（第1批）=====
+    {de:"Ich muss gleich wieder los.", zh:"我必须马上离开了。", en:"I have to leave again right away.", type:"sentence", level:"A2"},
+    {de:"Ich weiß gar nicht, was ich damit machen soll.", zh:"我真不知道，我该做什么？", en:"I don't even know what I should do with it.", type:"sentence", level:"B1"},
+    {de:"Kannst du das vorstellen?", zh:"你能想象吗？", en:"Can you imagine that?", type:"sentence", level:"B1"},
+    {de:"Was denken die sich nur?", zh:"他们到底在想什么？", en:"What on earth are they thinking?", type:"sentence", level:"B1"},
+    {de:"Mach ich.", zh:"我来做/没问题。", en:"I'll do it. / No problem.", type:"phrase", level:"A2"},
+    {de:"Aber nur unter einer Bedingung.", zh:"但是只有一个条件。", en:"But only on one condition.", type:"sentence", level:"B1"},
+    {de:"Pass auf.", zh:"听着，注意。", en:"Pay attention. / Listen up.", type:"phrase", level:"A2"},
+    {de:"Das geht!", zh:"可行！", en:"That works! / It's possible!", type:"phrase", level:"A1"},
+    {de:"Spitze!", zh:"极好！", en:"Great! / Top notch!", type:"phrase", level:"A1"},
+    {de:"Geht's dir gut?", zh:"你还好吗？", en:"Are you okay?", type:"sentence", level:"A2"},
+    {de:"Oh, Quatsch!", zh:"胡说！", en:"Oh, nonsense!", type:"phrase", level:"A2"},
+    {de:"Das war's.", zh:"就这样。", en:"That's it. / That's all.", type:"phrase", level:"A2"},
+    {de:"Ihr seid großartig!", zh:"你们太有才了！", en:"You guys are awesome!", type:"sentence", level:"A2"},
+    {de:"Bin schon ganz aufgeregt!", zh:"我真是太高兴了！", en:"I'm already so excited!", type:"sentence", level:"B1"},
+    {de:"Was kann ich für Sie tun?", zh:"我能为您做什么？", en:"What can I do for you?", type:"sentence", level:"A2"},
+    {de:"Wie du willst!", zh:"你想干什么就干什么！", en:"As you wish! / Whatever you want!", type:"phrase", level:"A2"},
+    {de:"Ich bin ziemlich müde.", zh:"我累坏了。", en:"I'm quite tired.", type:"sentence", level:"A2"},
+    {de:"Hör zu!", zh:"听着！", en:"Listen up!", type:"phrase", level:"A2"},
+    {de:"Zum Wohl!", zh:"干杯！", en:"Cheers! / To your health!", type:"phrase", level:"A1"},
+    {de:"Herzlichen Glückwunsch!", zh:"热烈祝贺！", en:"Congratulations!", type:"phrase", level:"A2"},
+    {de:"Anders als Andere,", zh:"跟其他不同的是，", en:"Different from others,", type:"phrase", level:"B1"},
+    {de:"Alles in Ordnung?", zh:"一切顺利吗？", en:"Is everything all right?", type:"sentence", level:"A2"},
+    {de:"Sehen Sie mal da?", zh:"您看到那了吗？", en:"Do you see over there?", type:"sentence", level:"B1"},
+    {de:"Schön, dass Sie wieder da sind!", zh:"太好了，您又在这了。", en:"It's nice that you're back!", type:"sentence", level:"B1"},
+    {de:"Bin ich nicht!", zh:"我才没有！", en:"I am not! / Not me!", type:"phrase", level:"A2"},
 ];
 
 // 导出
