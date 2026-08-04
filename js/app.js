@@ -1006,8 +1006,40 @@ const App = (function() {
     }
 
     function updatePlayerUI() {
-        if (currentPage === 'player') {
-            renderPlayerPage();
+        const state = AudioPlayer.getState();
+
+        // 只更新播放器页面的关键信息，不重新渲染整个页面
+        if (currentPage === 'player' && state.currentTrack) {
+            // 更新当前条目信息（只在曲目变化时更新 DOM）
+            const deutschEl = document.querySelector('.player-deutsch');
+            const transEl = document.querySelector('.player-translation');
+            const counterEl = document.querySelector('.player-counter');
+            const playBtn = document.getElementById('player-play');
+
+            if (deutschEl) deutschEl.textContent = state.currentTrack.de;
+            if (transEl) {
+                transEl.innerHTML = escapeHtml(state.currentTrack.zh) +
+                    (state.currentTrack.en ? `<span class="en">${escapeHtml(state.currentTrack.en)}</span>` : '');
+            }
+            if (counterEl) {
+                counterEl.textContent = `第 ${state.currentIndex + 1} / ${state.queueLength} 条 · 重复 ${state.currentRepeat + 1} / ${state.repeatCount}`;
+            }
+            // 更新播放按钮图标
+            if (playBtn) {
+                playBtn.classList.toggle('playing', state.isPlaying);
+                playBtn.innerHTML = state.isPlaying
+                    ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>'
+                    : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+            }
+            // 更新进度条
+            const progressFill = document.querySelector('.progress-fill');
+            if (progressFill) {
+                progressFill.style.width = ((state.currentIndex + 1) / state.queueLength * 100) + '%';
+            }
+            const progressText = document.querySelector('.progress-text');
+            if (progressText) {
+                progressText.innerHTML = `<span>${state.currentIndex + 1} / ${state.queueLength}</span><span>${state.isPlaying ? '播放中' : '已暂停'}</span>`;
+            }
         }
         updateMiniPlayer();
     }

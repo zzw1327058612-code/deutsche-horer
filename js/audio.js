@@ -19,20 +19,18 @@ const AudioPlayer = (function() {
 
     let currentRepeat = 0;
     let intervalTimer = null;
-    let onStateChange = null;  // 回调
+    let onStateChange = null;
     let onTrackChange = null;
     let onProgress = null;
 
-    // iOS 后台播放保持：一个静音/极短音频，用于保持音频会话活跃
+    // iOS 后台播放保持
     let silenceAudio = null;
+    let isSwitching = false; // 防止重入
 
     function ensureAudioSession() {
-        // 对于 iOS Safari，需要用户交互后才能解锁音频
-        // 创建一个短音频并播放，可以让系统认为当前页面在播放音频
         if (!silenceAudio) {
             silenceAudio = new Audio();
             silenceAudio.loop = true;
-            // 使用一个极短的无声数据 URI
             silenceAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
             silenceAudio.volume = 0.01;
         }
@@ -49,25 +47,25 @@ const AudioPlayer = (function() {
     // ===== Media Session API =====
     function initMediaSession() {
         if ('mediaSession' in navigator) {
-            navigator.mediaSession.setActionHandler('play', () => resume());
-            navigator.mediaSession.setActionHandler('pause', () => pause());
-            navigator.mediaSession.setActionHandler('previoustrack', () => prev());
-            navigator.mediaSession.setActionHandler('nexttrack', () => next());
-            // seekto 可能不支持但设置不会出错
             try {
-                navigator.mediaSession.setActionHandler('seekto', null);
+                navigator.mediaSession.setActionHandler('play', () => resume());
+                navigator.mediaSession.setActionHandler('pause', () => pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => prev());
+                navigator.mediaSession.setActionHandler('nexttrack', () => next());
             } catch(e) {}
         }
     }
 
     function updateMediaSessionMetadata(track) {
         if ('mediaSession' in navigator && track) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: track.de || 'Deutsch Hörer',
-                artist: track.zh || '',
-                album: '德语听力播放器',
-            });
-            navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.de || 'Deutsch Hörer',
+                    artist: track.zh || '',
+                    album: '德语听力播放器',
+                });
+                navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+            } catch(e) {}
         }
     }
 
@@ -87,30 +85,33 @@ const AudioPlayer = (function() {
         currentIndex = startIndex;
         playlistId = plId;
         currentRepeat = 0;
+        isPlaying = true;
+        ensureAudioSession();
         startPlaying();
     }
 
     function startPlaying() {
         if (queue.length === 0) return;
 
-        isPlaying = true;
         const track = queue[currentIndex];
+        if (!track) return;
 
-        // 保持音频会话活跃（iOS 后台播放关键）
-        ensureAudioSession();
+        isPlaying = true;
+        isSwitching = false;
 
         updateMediaSessionMetadata(track);
         notifyTrackChange();
-
         speakTrack(track);
     }
 
     function speakTrack(track) {
+        // 不在这里调 stopAll，避免打断回调链
+        // TTS.speak 内部会处理停止之前的播放
         TTS.speak(
             track.de,
             settings.rate,
-            () => onSpeakEnd(),   // onend
-            () => onSpeakStart()  // onstart
+            () => onSpeakEnd(),
+            () => onSpeakStart()
         );
     }
 
@@ -119,16 +120,26 @@ const AudioPlayer = (function() {
     }
 
     function onSpeakEnd() {
+        // 防止重入（可能被多次调用）
+        if (isSwitching) return;
+        isSwitching = true;
+
         currentRepeat++;
 
         if (currentRepeat < settings.repeatCount) {
             // 还在重复当前条
             if (settings.intervalSec > 0) {
                 intervalTimer = setTimeout(() => {
-                    if (isPlaying) speakTrack(queue[currentIndex]);
+                    if (isPlaying) {
+                        isSwitching = false;
+                        speakTrack(queue[currentIndex]);
+                    }
                 }, settings.intervalSec * 1000);
             } else {
-                if (isPlaying) speakTrack(queue[currentIndex]);
+                if (isPlaying) {
+                    isSwitching = false;
+                    speakTrack(queue[currentIndex]);
+                }
             }
         } else {
             // 当前条播放完毕
@@ -141,21 +152,29 @@ const AudioPlayer = (function() {
                         if (isPlaying) {
                             currentIndex++;
                             saveProgress();
+                            isSwitching = false;
                             startPlaying();
+                        } else {
+                            isSwitching = false;
                         }
                     }, settings.intervalSec * 1000);
                 } else {
                     if (isPlaying) {
                         currentIndex++;
                         saveProgress();
+                        isSwitching = false;
                         startPlaying();
+                    } else {
+                        isSwitching = false;
                     }
                 }
-            } else if (!settings.autoNext || currentIndex >= queue.length - 1) {
+            } else {
                 // 播放结束
                 isPlaying = false;
+                isSwitching = false;
+                releaseAudioSession();
                 if ('mediaSession' in navigator) {
-                    navigator.mediaSession.playbackState = 'paused';
+                    try { navigator.mediaSession.playbackState = 'paused'; } catch(e) {}
                 }
                 notifyStateChange();
                 notifyProgress();
@@ -169,10 +188,10 @@ const AudioPlayer = (function() {
             clearTimeout(intervalTimer);
             intervalTimer = null;
         }
+        isSwitching = false;
         TTS.stop();
-        releaseAudioSession();
         if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
+            try { navigator.mediaSession.playbackState = 'paused'; } catch(e) {}
         }
         notifyStateChange();
         notifyProgress();
@@ -184,9 +203,10 @@ const AudioPlayer = (function() {
             isPlaying = true;
             ensureAudioSession();
             if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
+                try { navigator.mediaSession.playbackState = 'playing'; } catch(e) {}
             }
-            // 如果当前条还没播完，从头开始播
+            currentRepeat = 0;
+            isSwitching = false;
             speakTrack(queue[currentIndex]);
             notifyStateChange();
             notifyProgress();
@@ -198,6 +218,7 @@ const AudioPlayer = (function() {
             if (intervalTimer) clearTimeout(intervalTimer);
             TTS.stop();
             currentRepeat = 0;
+            isSwitching = false;
             currentIndex++;
             saveProgress();
             if (isPlaying) {
@@ -214,6 +235,7 @@ const AudioPlayer = (function() {
             if (intervalTimer) clearTimeout(intervalTimer);
             TTS.stop();
             currentRepeat = 0;
+            isSwitching = false;
             currentIndex--;
             saveProgress();
             if (isPlaying) {
@@ -230,6 +252,7 @@ const AudioPlayer = (function() {
             if (intervalTimer) clearTimeout(intervalTimer);
             TTS.stop();
             currentRepeat = 0;
+            isSwitching = false;
             currentIndex = index;
             saveProgress();
             if (isPlaying) {
@@ -252,13 +275,14 @@ const AudioPlayer = (function() {
     function stop() {
         isPlaying = false;
         if (intervalTimer) clearTimeout(intervalTimer);
+        isSwitching = false;
         TTS.stop();
         releaseAudioSession();
         queue = [];
         currentIndex = 0;
         currentRepeat = 0;
         if ('mediaSession' in navigator) {
-            navigator.mediaSession.playbackState = 'paused';
+            try { navigator.mediaSession.playbackState = 'paused'; } catch(e) {}
         }
         notifyStateChange();
         notifyProgress();

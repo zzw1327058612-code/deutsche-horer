@@ -84,7 +84,17 @@ const TTS = (function() {
         const filename = audioMap[text];
         if (!filename) return false;
 
-        stopAll();
+        // 先清除当前音频的回调再停止，防止 onended 被触发
+        if (currentAudio) {
+            currentAudio.onended = null;
+            currentAudio.onplay = null;
+            currentAudio.onerror = null;
+            currentAudio.pause();
+            currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+            speechSynthesis.cancel();
+        }
 
         const audio = new Audio(audioBasePath + filename);
         audio.playbackRate = rate || 1.0;
@@ -115,7 +125,6 @@ const TTS = (function() {
      */
     function speakWithProxy(text, rate, onend, onstart) {
         if (!ttsProxyUrl) {
-            // 没有配置代理，回退到系统 TTS
             return speakWithTTS(text, rate, onend, onstart);
         }
 
@@ -123,7 +132,17 @@ const TTS = (function() {
             return speakWithTTS(text, rate, onend, onstart);
         }
 
-        stopAll();
+        // 先清除回调再停止
+        if (currentAudio) {
+            currentAudio.onended = null;
+            currentAudio.onplay = null;
+            currentAudio.onerror = null;
+            currentAudio.pause();
+            currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+            speechSynthesis.cancel();
+        }
 
         const url = ttsProxyUrl + '?q=' + encodeURIComponent(text) + '&tl=de';
 
